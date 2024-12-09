@@ -11,7 +11,8 @@ This repository contains information, data and code of our paper: Scaffolding Co
 
 ## 🔥 Updates
 
-[2024.12.9] Our work is accepted by COLING conference(2025) !
+[2024.12.9] Our work is accepted by COLING conference(2025)!
+
 [2024.02.22] We released the code to apply standard Scaffold prompting to vision-language tasks.
 
 ## 📍 Introduction
