@@ -2,15 +2,22 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 from tqdm import tqdm
 
-def dot_matrix_two_dimensional(image_path, save_path, dots_size_w, dots_size_h):
+def open_image(image_or_image_path):
+    if isinstance(image_or_image_path, Image.Image):
+        return image_or_image_path
+    elif isinstance(image_or_image_path, str):
+        return Image.open(image_or_image_path)
+    else:
+        raise ValueError("Unsupported input type!")
+
+def dot_matrix_two_dimensional(image_or_image_path, save_path = None, dots_size_w = 6, dots_size_h = 6, save_img = False, font_path = 'fonts/arial.tff'):
     """
     takes an original image as input, save the processed image to save_path. Each dot is labeled with two-dimensional Cartesian coordinates (x,y). Suitable for single-image tasks.
     control args:
     1. dots_size_w: the number of columns of the dots matrix
     2. dots_size_h: the number of rows of the dots matrix
     """
-
-    with Image.open(image_path) as img:
+    with open_image(image_or_image_path) as img:
         if img.mode != 'RGB':
             img = img.convert('RGB')
         draw = ImageDraw.Draw(img, 'RGB')
@@ -21,7 +28,7 @@ def dot_matrix_two_dimensional(image_path, save_path, dots_size_w, dots_size_h):
         cell_width = width / grid_size_w
         cell_height = height / grid_size_h
 
-        font = ImageFont.truetype("fonts/arial.ttf", width // 40)  # Adjust font size if needed; default == width // 40
+        font = ImageFont.truetype(font_path, width // 40)  # Adjust font size if needed; default == width // 40
 
         count = 0
         for j in range(1, grid_size_h):
@@ -45,11 +52,12 @@ def dot_matrix_two_dimensional(image_path, save_path, dots_size_w, dots_size_h):
                 label_str = f"({count_w+1},{count_h+1})"
                 draw.text((text_x, text_y), label_str, fill=opposite_color, font=font)
                 count += 1
+        if save_img:
+            print(">>> dots overlaid image processed, stored in", save_path)
+            img.save(save_path)
+        return img
 
-        print(">>> dots overlaid image processed, stored in", save_path)
-        img.save(save_path)
-
-def dot_matrix_three_dimensional_single(image_path, save_path, dots_size_w, dots_size_h, first_index):
+def dot_matrix_three_dimensional_single(image_or_image_path, save_path = None, dots_size_w = 6, dots_size_h = 6, first_index = 0, save_img = False):
     """
     takes an original image as input, save the processed image to save_path. Each dot is labeled with three-dimensional Cartesian coordinates (t,x,y). Suitable for image-sequence tasks.
     control args:
@@ -57,7 +65,7 @@ def dot_matrix_three_dimensional_single(image_path, save_path, dots_size_w, dots
     2. dots_size_h: the number of rows of the dots matrix
     3. first_index: the value of t-coordinate within this image
     """
-    with Image.open(image_path) as img:
+    with open_image(image_or_image_path) as img:
         if img.mode != 'RGB':
             img = img.convert('RGB')
         draw = ImageDraw.Draw(img, 'RGB')
@@ -93,8 +101,10 @@ def dot_matrix_three_dimensional_single(image_path, save_path, dots_size_w, dots
                 draw.text((text_x, text_y), label_str, fill=opposite_color, font=font)
                 count += 1
 
-        print(">>> dots overlaid image processed, stored in", save_path)
-        img.save(save_path)
+        if save_img:
+            print(">>> dots overlaid image processed, stored in", save_path)
+            img.save(save_path)
+        return img
 
 def dot_matrix_three_dimensional(image_paths, save_paths, dots_size_w, dots_size_h):
     """
@@ -102,9 +112,9 @@ def dot_matrix_three_dimensional(image_paths, save_paths, dots_size_w, dots_size
     """
 
     for i, (image_path, save_path) in enumerate(zip(image_paths, save_paths)):
-        dot_matrix_three_dimensional_single(image_path, save_path, dots_size_w, dots_size_h, i+1)
+        dot_matrix_three_dimensional_single(image_path, save_path, dots_size_w, dots_size_h, i+1, save_img = True)
 
-def crop_image_coordinates(image_path, save_path, dots_size_w, dots_size_h, x, y, radius=2):
+def crop_image_coordinates(image_or_image_path, save_path, dots_size_w, dots_size_h, x, y, radius=2, save_img = False):
     """
     crop an local region around the target coordinate (x,y)
     control args:
@@ -112,7 +122,7 @@ def crop_image_coordinates(image_path, save_path, dots_size_w, dots_size_h, x, y
     2. x, y: the target coordinate of the local region
     3. radius: control the size of the cropped region
     """
-    with Image.open(image_path) as img:
+    with open_image(image_or_image_path) as img:
         width, height = img.size
         grid_size_w = dots_size_w + 1
         grid_size_h = dots_size_h + 1
@@ -127,8 +137,9 @@ def crop_image_coordinates(image_path, save_path, dots_size_w, dots_size_h, x, y
         y_pixel_max = min(width-1, y_pixel + radius * cell_width)
 
         cropped_image = img.crop([y_pixel_min, x_pixel_min, y_pixel_max, x_pixel_max])
-        
-        cropped_image.save(save_path)
+        if save_img:
+            cropped_image.save(save_path)
+        return cropped_image
 
 def get_img_files(dir_):
     """
@@ -141,7 +152,7 @@ def get_img_files(dir_):
                 img_files.append(os.path.join(root, file))
     return img_files
 
-def process_imgs_dir(dir_):
+def process_imgs_dir(dir_, font_path = 'fonts/arial.tff'):
     """
     process all the images in the target directory: generate all the dots overlaid images
     """
@@ -152,10 +163,10 @@ def process_imgs_dir(dir_):
         save_path = img_path.replace(".jpg", f"_dots.jpg")
         grid_size_w, grid_size_h = 6, 6
         try:
-            dot_matrix_two_dimensional(img_path, save_path, grid_size_w, grid_size_h)
+            dot_matrix_two_dimensional(img_path, save_path, grid_size_w, grid_size_h, save_img = True, font_path = font_path)
         except Exception as e:
-            print(f">>> encounterd exceptions: ", e, "when processing image", img_path)
-            continue      
+            print(f">>> encountered exceptions: ", e, "when processing image", img_path)
+            continue
 
 if __name__=="__main__":
     # TODO process your images here before querying the LMM, an example is as follow.
