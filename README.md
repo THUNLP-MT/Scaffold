@@ -5,7 +5,7 @@ This repository contains information, data and code of our paper: Scaffolding Co
 
 <div align="center">
 
- | [日本語](docs/README_JP.md) | [English](README.md) |
+ | [English](README.md) | [中文](docs/README_ZH.md) | [日本語](docs/README_JP.md) |
 
 </div>
 
